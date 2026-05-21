@@ -1,361 +1,810 @@
+html
+
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Pro HR Suite - 2 in 1</title>
-    
-    <script src="https://cdn.tailwindcss.com"></script>
-    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700;800&display=swap" rel="stylesheet">
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
+<title>DailyFlow — Expense Tracker</title>
+<link href="https://fonts.googleapis.com/css2?family=Jost:wght@300;400;500;600;700;800;900&display=swap" rel="stylesheet">
+<link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@tabler/icons-webfont@3.19.0/dist/tabler-icons.min.css">
+<style>
+*{margin:0;padding:0;box-sizing:border-box;}
+:root{
+  --bg:#050812;--card:#0B0F1E;--card2:#0F1428;--border:rgba(255,255,255,0.06);
+  --border2:rgba(255,255,255,0.12);--credit:#00CFA8;--credit-bg:rgba(0,207,168,0.1);
+  --credit-glow:rgba(0,207,168,0.3);--debit:#FF4B6E;--debit-bg:rgba(255,75,110,0.1);
+  --debit-glow:rgba(255,75,110,0.3);--accent:#5C78FF;--accent-bg:rgba(92,120,255,0.1);
+  --text:#F0F4FF;--text-muted:#5A6A8A;--text-sub:#7A8AA8;
+}
+html,body{font-family:'Jost',sans-serif;background:var(--bg);color:var(--text);min-height:100vh;
+  -webkit-font-smoothing:antialiased;overflow-x:hidden;}
 
-    <style>
-        body { font-family: 'Poppins', sans-serif; background-color: #0f172a; color: #f8fafc; }
-        ::-webkit-scrollbar { width: 8px; }
-        ::-webkit-scrollbar-track { background: #1e293b; }
-        ::-webkit-scrollbar-thumb { background: #3b82f6; border-radius: 4px; }
-        
-        /* Strict A4 Paper - PAYSLIP */
-        #payslip-paper {
-            background-color: #ffffff; color: #000000;
-            width: 210mm; min-height: 297mm; max-height: 297mm;
-            margin: 0 auto; padding: 40px 50px;
-            box-sizing: border-box; box-shadow: 0 10px 15px -3px rgba(0,0,0,0.5);
-            overflow: hidden;
-        }
-        .pdf-table { width: 100%; border-collapse: collapse; font-size: 13px; margin-bottom: 30px; }
-        .pdf-table th, .pdf-table td { border: 1px solid #000; padding: 10px 12px; text-align: left; color: #000; }
-        .pdf-table th { background-color: #f3f4f6; font-weight: 700; }
-        .amount-col { text-align: right !important; }
+/* ───── LOADER ───── */
+#loader{position:fixed;inset:0;z-index:9999;background:var(--bg);
+  display:flex;align-items:center;justify-content:center;flex-direction:column;gap:0;
+  transition:opacity 0.6s ease;}
+#loader.fade-out{opacity:0;pointer-events:none;}
+.ld-ring{width:80px;height:80px;border-radius:50%;border:2px solid rgba(255,255,255,0.05);
+  border-top:2px solid var(--credit);animation:spin 1.1s linear infinite;
+  display:flex;align-items:center;justify-content:center;position:relative;}
+.ld-ring::after{content:'₹';position:absolute;font-size:26px;font-weight:900;color:var(--credit);
+  animation:spin-rev 1.1s linear infinite;}
+@keyframes spin{to{transform:rotate(360deg)}}
+@keyframes spin-rev{to{transform:rotate(-360deg)}}
+.ld-brand{font-size:20px;font-weight:900;letter-spacing:6px;margin-top:20px;color:var(--text);}
+.ld-sub{font-size:11px;font-weight:600;letter-spacing:3px;color:var(--text-muted);margin-top:4px;}
+.ld-bar-wrap{width:140px;height:2px;background:rgba(255,255,255,0.07);border-radius:2px;margin-top:20px;overflow:hidden;}
+.ld-bar{height:100%;width:0%;background:var(--credit);border-radius:2px;animation:ldbar 2s ease-out forwards;}
+@keyframes ldbar{0%{width:0}60%{width:70%}100%{width:100%}}
+.ld-dots{display:flex;gap:6px;margin-top:16px;}
+.ld-dot{width:6px;height:6px;border-radius:50%;background:var(--credit);opacity:0.3;
+  animation:dotpulse 1.2s ease-in-out infinite;}
+.ld-dot:nth-child(2){animation-delay:0.2s;}
+.ld-dot:nth-child(3){animation-delay:0.4s;}
+@keyframes dotpulse{0%,100%{opacity:0.3;transform:scale(1)}50%{opacity:1;transform:scale(1.3)}}
 
-        /* Strict A4 Paper - CERTIFICATE */
-        #cert-paper {
-            background-color: #ffffff; color: #000000;
-            width: 210mm; min-height: 297mm; max-height: 297mm;
-            margin: 0 auto; padding: 50px 60px;
-            box-sizing: border-box; box-shadow: 0 10px 15px -3px rgba(0,0,0,0.5);
-            overflow: hidden; position: relative;
-        }
-        .formal-text { font-family: 'Times New Roman', Times, serif; font-size: 16px; line-height: 1.8; text-align: justify; }
+/* ───── APP ───── */
+#app{display:none;}
+.app-wrap{max-width:480px;margin:0 auto;padding-bottom:120px;}
 
-        .preview-wrapper { overflow-x: auto; padding: 20px; background: #1e293b; border-radius: 10px; width: 100%; }
-        .hidden { display: none !important; }
-    </style>
+/* ───── HEADER ───── */
+.app-header{padding:24px 20px 0;animation:fadeDown 0.5s ease both;}
+@keyframes fadeDown{from{opacity:0;transform:translateY(-16px)}to{opacity:1;transform:translateY(0)}}
+.brand-label{font-size:11px;font-weight:800;letter-spacing:4px;color:var(--text-muted);}
+.brand-date{font-size:26px;font-weight:800;color:var(--text);margin-top:3px;line-height:1.1;}
+.hdr-actions{display:flex;gap:8px;}
+.icon-btn{width:42px;height:42px;border-radius:13px;background:var(--card);
+  border:1px solid var(--border);display:flex;align-items:center;justify-content:center;
+  cursor:pointer;color:var(--text-sub);font-size:19px;transition:all 0.2s;}
+.icon-btn:hover{background:var(--card2);border-color:var(--border2);color:var(--text);}
+
+/* ───── BALANCE CARD ───── */
+.balance-card{margin:18px 20px 0;background:var(--card);border:1px solid var(--border);
+  border-radius:26px;padding:26px;position:relative;overflow:hidden;
+  animation:fadeUp 0.5s 0.1s ease both;}
+@keyframes fadeUp{from{opacity:0;transform:translateY(20px)}to{opacity:1;transform:translateY(0)}}
+.balance-card::before{content:'';position:absolute;top:-50px;right:-50px;width:220px;height:220px;
+  background:radial-gradient(circle,rgba(0,207,168,0.07) 0%,transparent 65%);pointer-events:none;}
+.balance-card::after{content:'';position:absolute;bottom:-70px;left:-30px;width:180px;height:180px;
+  background:radial-gradient(circle,rgba(92,120,255,0.06) 0%,transparent 65%);pointer-events:none;}
+.bal-tag{font-size:11px;font-weight:700;letter-spacing:2px;color:var(--text-muted);text-transform:uppercase;}
+.bal-amount{font-size:52px;font-weight:900;letter-spacing:-2px;margin:8px 0 4px;
+  font-variant-numeric:tabular-nums;transition:color 0.4s;}
+.bal-amount.pos{color:var(--credit);}
+.bal-amount.neg{color:var(--debit);}
+.bal-amount.zero{color:var(--text);}
+.bal-meta{font-size:13px;color:var(--text-muted);}
+.bal-row{display:flex;gap:0;margin-top:18px;padding-top:18px;border-top:1px solid var(--border);}
+.bal-col{flex:1;border-right:1px solid var(--border);padding-right:16px;}
+.bal-col:last-child{border-right:none;padding-right:0;text-align:right;margin-left:auto;}
+.bal-col:nth-child(2){padding-left:16px;}
+.bal-col-label{font-size:10px;font-weight:700;letter-spacing:1.5px;color:var(--text-muted);text-transform:uppercase;}
+.bal-col-val{font-size:18px;font-weight:900;margin-top:2px;}
+.v-credit{color:var(--credit);}
+.v-debit{color:var(--debit);}
+.v-accent{color:var(--accent);}
+
+/* ───── STAT CARDS ───── */
+.stats-row{display:grid;grid-template-columns:1fr 1fr;gap:12px;padding:12px 20px 0;
+  animation:fadeUp 0.5s 0.15s ease both;}
+.stat-card{border-radius:20px;padding:18px;border:1px solid var(--border);
+  display:flex;align-items:center;gap:13px;transition:transform 0.2s,border-color 0.2s;cursor:default;}
+.stat-card:hover{transform:translateY(-2px);}
+.stat-card.cr{background:var(--credit-bg);border-color:rgba(0,207,168,0.14);}
+.stat-card.dr{background:var(--debit-bg);border-color:rgba(255,75,110,0.14);}
+.stat-ico{width:42px;height:42px;border-radius:13px;display:flex;align-items:center;justify-content:center;font-size:21px;flex-shrink:0;}
+.cr .stat-ico{background:rgba(0,207,168,0.14);color:var(--credit);}
+.dr .stat-ico{background:rgba(255,75,110,0.14);color:var(--debit);}
+.stat-lbl{font-size:10px;font-weight:700;letter-spacing:1.5px;text-transform:uppercase;color:var(--text-muted);}
+.stat-val{font-size:20px;font-weight:900;margin-top:3px;}
+.cr .stat-val{color:var(--credit);}
+.dr .stat-val{color:var(--debit);}
+
+/* ───── SECTIONS ───── */
+.section{margin:16px 20px 0;animation:fadeUp 0.5s 0.2s ease both;}
+.section-head{display:flex;align-items:center;justify-content:space-between;margin-bottom:11px;}
+.section-title{font-size:15px;font-weight:800;color:var(--text);letter-spacing:0.3px;}
+.sec-card{background:var(--card);border:1px solid var(--border);border-radius:22px;padding:18px;}
+
+/* ───── TABS ───── */
+.chart-tabs,.filter-tabs{display:flex;gap:4px;}
+.chart-tab,.filter-tab{padding:6px 12px;border-radius:9px;font-size:12px;font-weight:700;
+  letter-spacing:0.3px;border:1px solid transparent;cursor:pointer;
+  background:transparent;color:var(--text-muted);transition:all 0.2s;font-family:'Jost',sans-serif;}
+.chart-tab.active{background:var(--accent-bg);color:var(--accent);border-color:rgba(92,120,255,0.2);}
+.filter-tab.active{background:rgba(255,255,255,0.06);color:var(--text);border-color:var(--border2);}
+
+/* ───── CHART ───── */
+.no-chart{text-align:center;padding:36px 0;color:var(--text-muted);font-size:13px;font-weight:500;}
+.no-chart i{font-size:36px;display:block;margin-bottom:8px;opacity:0.3;}
+.chart-legend{display:flex;flex-wrap:wrap;gap:10px;margin-top:14px;}
+.leg-item{display:flex;align-items:center;gap:6px;font-size:11px;font-weight:700;color:var(--text-sub);}
+.leg-dot{width:8px;height:8px;border-radius:2px;flex-shrink:0;}
+
+/* ───── SEARCH ───── */
+.search-wrap{position:relative;margin-bottom:14px;}
+.search-wrap i{position:absolute;left:13px;top:50%;transform:translateY(-50%);color:var(--text-muted);font-size:16px;}
+.search-wrap input{width:100%;background:rgba(255,255,255,0.04);border:1px solid var(--border);
+  border-radius:12px;padding:10px 14px 10px 38px;color:var(--text);
+  font-family:'Jost',sans-serif;font-size:14px;font-weight:500;outline:none;transition:border-color 0.2s;}
+.search-wrap input::placeholder{color:var(--text-muted);}
+.search-wrap input:focus{border-color:var(--border2);}
+
+/* ───── TRANSACTIONS ───── */
+.tx-group-date{font-size:10px;font-weight:800;letter-spacing:2px;text-transform:uppercase;
+  color:var(--text-muted);margin:14px 0 8px 2px;}
+.tx-group-date:first-child{margin-top:0;}
+.tx-item{display:flex;align-items:center;gap:12px;padding:13px 12px;border-radius:15px;
+  border:1px solid transparent;margin-bottom:5px;position:relative;overflow:hidden;
+  transition:background 0.2s,border-color 0.2s;animation:txIn 0.35s ease both;cursor:default;}
+@keyframes txIn{from{opacity:0;transform:translateX(-12px)}to{opacity:1;transform:translateX(0)}}
+.tx-item:hover{background:rgba(255,255,255,0.03);border-color:var(--border);}
+.tx-item.removing{animation:txOut 0.3s ease forwards;}
+@keyframes txOut{to{opacity:0;transform:translateX(18px);max-height:0;margin:0;padding:0;border:none;}}
+.tx-ico{width:44px;height:44px;border-radius:14px;display:flex;align-items:center;justify-content:center;font-size:21px;flex-shrink:0;}
+.tx-ico.cr{background:var(--credit-bg);color:var(--credit);}
+.tx-ico.dr{background:var(--debit-bg);color:var(--debit);}
+.tx-info{flex:1;min-width:0;}
+.tx-cat{font-size:14px;font-weight:800;color:var(--text);}
+.tx-src{font-size:12px;font-weight:500;color:var(--text-muted);margin-top:2px;
+  white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+.tx-right{text-align:right;flex-shrink:0;}
+.tx-amt{font-size:16px;font-weight:900;}
+.tx-amt.cr{color:var(--credit);}
+.tx-amt.dr{color:var(--debit);}
+.tx-time{font-size:11px;color:var(--text-muted);margin-top:2px;}
+.tx-del{position:absolute;right:10px;top:10px;width:22px;height:22px;border-radius:7px;
+  background:var(--debit-bg);color:var(--debit);border:none;cursor:pointer;
+  display:flex;align-items:center;justify-content:center;font-size:11px;
+  opacity:0;transition:opacity 0.2s;z-index:2;}
+.tx-item:hover .tx-del{opacity:1;}
+
+/* ───── EMPTY ───── */
+.empty-state{text-align:center;padding:44px 20px;}
+.empty-emoji{font-size:52px;margin-bottom:14px;}
+.empty-title{font-size:18px;font-weight:800;color:var(--text);}
+.empty-sub{font-size:13px;color:var(--text-muted);margin-top:5px;}
+
+/* ───── FAB ───── */
+.fab{position:fixed;bottom:28px;left:50%;transform:translateX(-50%);
+  width:66px;height:66px;border-radius:50%;background:var(--credit);color:#000;
+  border:none;cursor:pointer;display:flex;align-items:center;justify-content:center;
+  font-size:30px;box-shadow:0 8px 30px var(--credit-glow);transition:all 0.3s;z-index:100;}
+.fab:hover{transform:translateX(-50%) scale(1.07);box-shadow:0 12px 40px var(--credit-glow);}
+.fab:active{transform:translateX(-50%) scale(0.96);}
+.fab.is-open{transform:translateX(-50%) rotate(45deg);background:var(--debit);box-shadow:0 8px 30px var(--debit-glow);}
+
+/* ───── MODAL ───── */
+.modal-overlay{position:fixed;inset:0;z-index:200;background:rgba(0,0,0,0.72);
+  backdrop-filter:blur(6px);display:flex;align-items:flex-end;justify-content:center;
+  opacity:0;pointer-events:none;transition:opacity 0.3s;}
+.modal-overlay.is-open{opacity:1;pointer-events:all;}
+.modal-panel{background:#0B0F1E;border-radius:28px 28px 0 0;border:1px solid var(--border);
+  border-bottom:none;padding:14px 20px 36px;width:100%;max-width:480px;
+  transform:translateY(100%);transition:transform 0.42s cubic-bezier(0.32,0.72,0,1);
+  max-height:92vh;overflow-y:auto;-webkit-overflow-scrolling:touch;}
+.modal-overlay.is-open .modal-panel{transform:translateY(0);}
+.modal-handle{width:38px;height:4px;background:rgba(255,255,255,0.12);border-radius:2px;margin:0 auto 18px;}
+.modal-head{display:flex;align-items:center;justify-content:space-between;margin-bottom:18px;}
+.modal-title{font-size:21px;font-weight:900;color:var(--text);}
+.modal-close{width:36px;height:36px;border-radius:10px;background:rgba(255,255,255,0.05);
+  border:1px solid var(--border);color:var(--text-muted);cursor:pointer;font-size:18px;
+  display:flex;align-items:center;justify-content:center;transition:all 0.2s;}
+.modal-close:hover{background:rgba(255,255,255,0.09);color:var(--text);}
+
+/* ───── TYPE TOGGLE ───── */
+.type-toggle{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:18px;}
+.type-btn{padding:14px;border-radius:15px;border:2px solid var(--border);background:transparent;
+  color:var(--text-muted);cursor:pointer;font-family:'Jost',sans-serif;font-size:14px;
+  font-weight:800;display:flex;align-items:center;justify-content:center;gap:8px;
+  letter-spacing:0.5px;transition:all 0.25s;}
+.type-btn.active[data-type="credit"]{background:var(--credit-bg);border-color:var(--credit);color:var(--credit);}
+.type-btn.active[data-type="debit"]{background:var(--debit-bg);border-color:var(--debit);color:var(--debit);}
+
+/* ───── FORM ───── */
+.f-group{margin-bottom:15px;}
+.f-label{font-size:10px;font-weight:800;letter-spacing:1.5px;text-transform:uppercase;
+  color:var(--text-muted);margin-bottom:8px;display:block;}
+.amt-wrap{position:relative;}
+.amt-prefix{position:absolute;left:16px;top:50%;transform:translateY(-50%);
+  font-size:28px;font-weight:900;color:var(--text-muted);}
+.amt-field{width:100%;background:rgba(255,255,255,0.04);border:1px solid var(--border);
+  border-radius:15px;padding:16px 16px 16px 46px;color:var(--text);
+  font-family:'Jost',sans-serif;font-size:36px;font-weight:900;letter-spacing:-1px;
+  outline:none;transition:border-color 0.2s;}
+.amt-field::placeholder{color:rgba(255,255,255,0.1);}
+.amt-field:focus{border-color:var(--border2);}
+.quick-pills{display:flex;gap:6px;flex-wrap:wrap;margin-top:8px;}
+.q-pill{padding:6px 13px;border-radius:20px;border:1px solid var(--border);
+  background:rgba(255,255,255,0.03);font-size:12px;font-weight:700;color:var(--text-muted);
+  cursor:pointer;transition:all 0.2s;font-family:'Jost',sans-serif;}
+.q-pill:hover{background:rgba(255,255,255,0.08);color:var(--text);border-color:var(--border2);}
+.txt-field{width:100%;background:rgba(255,255,255,0.04);border:1px solid var(--border);
+  border-radius:13px;padding:12px 15px;color:var(--text);font-family:'Jost',sans-serif;
+  font-size:14px;font-weight:500;outline:none;transition:border-color 0.2s;}
+.txt-field::placeholder{color:var(--text-muted);}
+.txt-field:focus{border-color:var(--border2);}
+
+/* ───── CATEGORIES ───── */
+.cat-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:7px;}
+.cat-btn{padding:11px 6px;border-radius:13px;border:1px solid var(--border);
+  background:rgba(255,255,255,0.02);cursor:pointer;text-align:center;
+  transition:all 0.2s;font-family:'Jost',sans-serif;}
+.cat-btn:hover{background:rgba(255,255,255,0.06);}
+.cat-btn.sel-cr{border-color:var(--credit);background:var(--credit-bg);}
+.cat-btn.sel-dr{border-color:var(--debit);background:var(--debit-bg);}
+.cat-ico{font-size:22px;display:block;margin-bottom:4px;color:var(--text-sub);}
+.cat-btn.sel-cr .cat-ico{color:var(--credit);}
+.cat-btn.sel-dr .cat-ico{color:var(--debit);}
+.cat-name{font-size:10px;font-weight:700;color:var(--text-muted);}
+.cat-btn.sel-cr .cat-name{color:var(--credit);}
+.cat-btn.sel-dr .cat-name{color:var(--debit);}
+
+/* ───── SUBMIT ───── */
+.submit-btn{width:100%;padding:17px;border-radius:17px;border:none;cursor:pointer;
+  font-family:'Jost',sans-serif;font-size:15px;font-weight:900;
+  display:flex;align-items:center;justify-content:center;gap:8px;
+  transition:all 0.3s;letter-spacing:1.5px;text-transform:uppercase;margin-top:6px;position:relative;}
+.submit-btn.cr{background:var(--credit);color:#000;box-shadow:0 8px 24px var(--credit-glow);}
+.submit-btn.dr{background:var(--debit);color:#fff;box-shadow:0 8px 24px var(--debit-glow);}
+.submit-btn:hover{transform:translateY(-2px);}
+.submit-btn:active{transform:scale(0.98);}
+.submit-btn.loading{opacity:0.7;pointer-events:none;}
+.spin-mini{width:16px;height:16px;border:2.5px solid rgba(0,0,0,0.25);border-top-color:rgba(0,0,0,0.9);
+  border-radius:50%;animation:spin 0.7s linear infinite;display:none;}
+.submit-btn.loading .spin-mini{display:block;}
+.submit-btn.loading .submit-label{opacity:0.5;}
+
+/* ───── TOAST ───── */
+.toast{position:fixed;bottom:108px;left:50%;transform:translateX(-50%) translateY(12px);
+  background:#141928;border:1px solid var(--border);border-radius:13px;padding:12px 18px;
+  display:flex;align-items:center;gap:10px;font-size:14px;font-weight:700;color:var(--text);
+  opacity:0;transition:all 0.3s;z-index:999;white-space:nowrap;pointer-events:none;}
+.toast.show{opacity:1;transform:translateX(-50%) translateY(0);}
+.toast.ok i{color:var(--credit);}
+.toast.err i{color:var(--debit);}
+.toast i{font-size:18px;}
+
+/* ───── SCROLLBAR ───── */
+::-webkit-scrollbar{width:3px;}
+::-webkit-scrollbar-track{background:transparent;}
+::-webkit-scrollbar-thumb{background:rgba(255,255,255,0.1);border-radius:2px;}
+</style>
 </head>
-<body class="min-h-screen flex flex-col items-center p-6">
+<body>
 
-    <div class="mb-8 mt-4 bg-[#1e293b] p-2 rounded-full border border-gray-700 shadow-xl flex gap-2">
-        <button id="tab-payslip" onclick="switchTab('payslip')" class="px-8 py-3 rounded-full font-bold text-sm uppercase tracking-wide transition-all bg-blue-600 text-white shadow-lg border-2 border-blue-400">
-            📄 Payslip Tool
-        </button>
-        <button id="tab-cert" onclick="switchTab('cert')" class="px-8 py-3 rounded-full font-bold text-sm uppercase tracking-wide transition-all bg-transparent text-gray-400 hover:text-white border-2 border-transparent hover:border-gray-600">
-            🎓 Experience Cert
-        </button>
+<!-- ████ LOADER ████ -->
+<div id="loader">
+  <div class="ld-ring"></div>
+  <div class="ld-brand">DAILYFLOW</div>
+  <div class="ld-sub">EXPENSE TRACKER</div>
+  <div class="ld-bar-wrap"><div class="ld-bar"></div></div>
+  <div class="ld-dots">
+    <div class="ld-dot"></div>
+    <div class="ld-dot"></div>
+    <div class="ld-dot"></div>
+  </div>
+</div>
+
+<!-- ████ APP ████ -->
+<div id="app">
+<div class="app-wrap">
+
+  <!-- HEADER -->
+  <header class="app-header d-flex align-items-start justify-content-between">
+    <div>
+      <div class="brand-label">DAILYFLOW</div>
+      <div class="brand-date" id="currentDate">Monday, 19 May</div>
+    </div>
+    <div class="hdr-actions">
+      <button class="icon-btn" id="exportBtn" title="Export CSV"><i class="ti ti-download"></i></button>
+      <button class="icon-btn" id="clearBtn" title="Clear All"><i class="ti ti-trash"></i></button>
+    </div>
+  </header>
+
+  <!-- BALANCE CARD -->
+  <div class="balance-card">
+    <div class="bal-tag">Net Balance</div>
+    <div class="bal-amount zero" id="balAmt">₹0</div>
+    <div class="bal-meta" id="balMeta">No transactions yet</div>
+    <div class="bal-row">
+      <div class="bal-col">
+        <div class="bal-col-label">Income</div>
+        <div class="bal-col-val v-credit" id="hdrCr">₹0</div>
+      </div>
+      <div class="bal-col">
+        <div class="bal-col-label">Spent</div>
+        <div class="bal-col-val v-debit" id="hdrDr">₹0</div>
+      </div>
+      <div class="bal-col">
+        <div class="bal-col-label">Saved</div>
+        <div class="bal-col-val v-accent" id="hdrSaved">0%</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- STATS -->
+  <div class="stats-row">
+    <div class="stat-card cr">
+      <div class="stat-ico"><i class="ti ti-arrow-down-circle"></i></div>
+      <div>
+        <div class="stat-lbl">Credit</div>
+        <div class="stat-val" id="statCr">₹0</div>
+      </div>
+    </div>
+    <div class="stat-card dr">
+      <div class="stat-ico"><i class="ti ti-arrow-up-circle"></i></div>
+      <div>
+        <div class="stat-lbl">Debit</div>
+        <div class="stat-val" id="statDr">₹0</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- CHART -->
+  <div class="section">
+    <div class="section-head">
+      <div class="section-title">Overview</div>
+      <div class="chart-tabs">
+        <button class="chart-tab active" data-chart="donut">Category</button>
+        <button class="chart-tab" data-chart="bar">7 Days</button>
+      </div>
+    </div>
+    <div class="sec-card">
+      <div id="noChart" class="no-chart"><i class="ti ti-chart-donut-3"></i>Add transactions to see insights</div>
+      <div id="donutWrap" style="display:none;position:relative;height:190px;"><canvas id="donutC" role="img" aria-label="Expense breakdown by category"></canvas></div>
+      <div id="barWrap" style="display:none;position:relative;height:190px;"><canvas id="barC" role="img" aria-label="7-day income vs expense"></canvas></div>
+      <div class="chart-legend" id="legend"></div>
+    </div>
+  </div>
+
+  <!-- TRANSACTIONS -->
+  <div class="section">
+    <div class="section-head">
+      <div class="section-title">Transactions</div>
+      <div class="filter-tabs">
+        <button class="filter-tab active" data-f="all">All</button>
+        <button class="filter-tab" data-f="credit">Credit</button>
+        <button class="filter-tab" data-f="debit">Debit</button>
+      </div>
+    </div>
+    <div class="sec-card">
+      <div class="search-wrap">
+        <i class="ti ti-search"></i>
+        <input type="text" id="searchInput" placeholder="Search by category, source, note…">
+      </div>
+      <div id="txList"></div>
+    </div>
+  </div>
+
+</div><!-- /app-wrap -->
+</div><!-- /app -->
+
+<!-- FAB -->
+<button class="fab" id="fab" aria-label="Add transaction"><i class="ti ti-plus"></i></button>
+
+<!-- MODAL -->
+<div class="modal-overlay" id="modal">
+  <div class="modal-panel">
+    <div class="modal-handle"></div>
+    <div class="modal-head">
+      <div class="modal-title">Add Transaction</div>
+      <button class="modal-close" id="closeModal"><i class="ti ti-x"></i></button>
     </div>
 
-    <div id="app-payslip" class="w-full max-w-4xl flex flex-col items-center">
-        
-        <div id="payslip-form" class="bg-[#1e293b] w-full rounded-2xl shadow-2xl overflow-hidden border border-gray-700">
-            <div class="bg-gradient-to-r from-blue-600 to-indigo-600 p-6 text-center">
-                <h1 class="text-3xl font-extrabold uppercase tracking-wide">⚡ Pro Payslip</h1>
-            </div>
-            <div class="p-8">
-                <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
-                    <div class="space-y-4">
-                        <h3 class="text-lg font-bold text-blue-400 uppercase border-b border-gray-600 pb-2">🏢 Company</h3>
-                        <input type="text" id="p_cName" class="w-full bg-[#0f172a] border border-gray-600 rounded-lg px-4 py-2 text-white font-semibold" placeholder="Company Name">
-                        <input type="text" id="p_cAddress" class="w-full bg-[#0f172a] border border-gray-600 rounded-lg px-4 py-2 text-white" placeholder="Company Address">
-                        <input type="month" id="p_cMonth" class="w-full bg-[#0f172a] border border-gray-600 rounded-lg px-4 py-2 text-white" style="color-scheme: dark;">
-                    </div>
-                    <div class="space-y-4">
-                        <h3 class="text-lg font-bold text-blue-400 uppercase border-b border-gray-600 pb-2">👤 Employee</h3>
-                        <input type="text" id="p_eName" class="w-full bg-[#0f172a] border border-gray-600 rounded-lg px-4 py-2 text-white font-semibold" placeholder="Employee Name">
-                        <input type="text" id="p_eCode" class="w-full bg-[#0f172a] border border-gray-600 rounded-lg px-4 py-2 text-white" placeholder="Employee Code">
-                    </div>
-                    <div class="space-y-4">
-                        <h3 class="text-lg font-bold text-green-400 uppercase border-b border-gray-600 pb-2">💰 Earnings (₹)</h3>
-                        <input type="number" id="p_sBasic" class="w-full bg-[#0f172a] border border-gray-600 rounded-lg px-4 py-2 text-white" placeholder="Basic Salary">
-                        <input type="number" id="p_sHra" class="w-full bg-[#0f172a] border border-gray-600 rounded-lg px-4 py-2 text-white" placeholder="HRA">
-                        <input type="number" id="p_sOther" class="w-full bg-[#0f172a] border border-gray-600 rounded-lg px-4 py-2 text-white" placeholder="Other Allowances">
-                    </div>
-                    <div class="space-y-4">
-                        <h3 class="text-lg font-bold text-red-400 uppercase border-b border-gray-600 pb-2">📉 Deductions (₹)</h3>
-                        <input type="number" id="p_dPf" class="w-full bg-[#0f172a] border border-gray-600 rounded-lg px-4 py-2 text-white" placeholder="PF Amount">
-                        <input type="number" id="p_dEsi" class="w-full bg-[#0f172a] border border-gray-600 rounded-lg px-4 py-2 text-white" placeholder="ESI Amount">
-                        <input type="number" id="p_dOther" class="w-full bg-[#0f172a] border border-gray-600 rounded-lg px-4 py-2 text-white" placeholder="Other Deductions">
-                    </div>
-                </div>
-                <div class="mt-10 text-center">
-                    <button onclick="previewPayslip()" class="bg-blue-600 hover:bg-blue-700 text-white font-bold py-4 px-12 rounded-full uppercase tracking-wider shadow-lg transform transition hover:scale-105">
-                        👁️ View Preview
-                    </button>
-                </div>
-            </div>
-        </div>
-
-        <div id="payslip-preview" class="w-full max-w-5xl hidden flex-col items-center">
-            <div class="flex gap-4 mb-6">
-                <button onclick="editPayslip()" class="bg-gray-600 hover:bg-gray-700 text-white font-bold py-3 px-8 rounded-lg uppercase text-sm">✏️ Edit Details</button>
-                <button onclick="downloadPayslip()" class="bg-green-600 hover:bg-green-700 text-white font-bold py-3 px-8 rounded-lg uppercase text-sm">📥 Download PDF</button>
-            </div>
-            <div class="preview-wrapper">
-                <div id="payslip-paper">
-                    <div style="text-align: center; border-bottom: 2px solid #000; padding-bottom: 10px; margin-bottom: 25px;">
-                        <h1 id="out_p_cName" style="color: #16a34a; font-size: 32px; font-weight: 800; text-transform: uppercase; margin: 0;">COMPANY NAME</h1>
-                        <p id="out_p_cAddress" style="color: #000; font-weight: 700; font-size: 15px; margin: 5px 0 0 0;">Company Address</p>
-                    </div>
-                    <h2 style="text-align: center; font-size: 16px; font-weight: 700; text-transform: uppercase; border: 1px solid #000; padding: 8px; margin-bottom: 25px; color: #000;">
-                        PAYSLIP FOR THE MONTH OF <span id="out_p_Month">MONTH-YEAR</span>
-                    </h2>
-                    <table style="width: 100%; margin-bottom: 25px; font-size: 14px; color: #000;">
-                        <tr>
-                            <td style="padding: 5px 0;"><strong>Employee Name:</strong> <span id="out_p_eName">Name</span></td>
-                            <td style="padding: 5px 0; text-align: right;"><strong>Employee Code:</strong> <span id="out_p_eCode">Code</span></td>
-                        </tr>
-                    </table>
-                    <table class="pdf-table">
-                        <thead>
-                            <tr>
-                                <th style="width: 35%;">EARNINGS</th><th class="amount-col" style="width: 15%;">AMOUNT (₹)</th>
-                                <th style="width: 35%;">DEDUCTIONS</th><th class="amount-col" style="width: 15%;">AMOUNT (₹)</th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                            <tr>
-                                <td><strong>Basic Salary</strong></td><td class="amount-col" id="out_p_basic">0.00</td>
-                                <td><strong>Provident Fund (PF)</strong></td><td class="amount-col" id="out_p_pf">0.00</td>
-                            </tr>
-                            <tr>
-                                <td><strong>House Rent Allowance</strong></td><td class="amount-col" id="out_p_hra">0.00</td>
-                                <td><strong>ESI / Health</strong></td><td class="amount-col" id="out_p_esi">0.00</td>
-                            </tr>
-                            <tr>
-                                <td><strong>Other Allowances</strong></td><td class="amount-col" id="out_p_sOther">0.00</td>
-                                <td><strong>Other Deductions</strong></td><td class="amount-col" id="out_p_dOther">0.00</td>
-                            </tr>
-                            <tr style="border-top: 2px solid #000;">
-                                <td style="font-weight: 700;">GROSS EARNINGS</td><td class="amount-col" style="font-weight: 700;" id="out_p_gross">0.00</td>
-                                <td style="font-weight: 700;">TOTAL DEDUCTIONS</td><td class="amount-col" style="font-weight: 700;" id="out_p_totDed">0.00</td>
-                            </tr>
-                        </tbody>
-                    </table>
-                    <div style="border: 2px solid #000; padding: 15px; display: flex; justify-content: space-between; align-items: center; color: #000;">
-                        <div>
-                            <p style="margin: 0; font-size: 15px; font-weight: 700;">NET PAY</p>
-                            <p style="margin: 0; font-size: 12px; font-style: italic;">Transferred to Salary Account</p>
-                        </div>
-                        <div style="font-size: 26px; font-weight: 800;">₹ <span id="out_p_net">0.00</span></div>
-                    </div>
-                    <div style="margin-top: 50px; text-align: center; color: #000; font-size: 12px; font-weight: 500; border-top: 1px dashed #000; padding-top: 10px;">
-                        <p style="margin: 0;">This is a computer-generated document and does not require a physical signature.</p>
-                    </div>
-                </div>
-            </div>
-        </div>
+    <!-- TYPE -->
+    <div class="type-toggle">
+      <button class="type-btn active" data-type="credit"><i class="ti ti-arrow-down-circle"></i> Credit</button>
+      <button class="type-btn" data-type="debit"><i class="ti ti-arrow-up-circle"></i> Debit</button>
     </div>
 
-    <div id="app-cert" class="w-full max-w-4xl flex flex-col items-center hidden">
-        
-        <div id="cert-form" class="bg-[#1e293b] w-full rounded-2xl shadow-2xl overflow-hidden border border-gray-700">
-            <div class="bg-gradient-to-r from-emerald-600 to-teal-600 p-6 text-center">
-                <h1 class="text-3xl font-extrabold uppercase tracking-wide">🎓 Pro Experience Cert</h1>
-            </div>
-            <div class="p-8">
-                <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
-                    <div class="space-y-4">
-                        <h3 class="text-lg font-bold text-teal-400 uppercase border-b border-gray-600 pb-2">🏢 Company Info</h3>
-                        <input type="text" id="c_cName" class="w-full bg-[#0f172a] border border-gray-600 rounded-lg px-4 py-2 text-white font-semibold" placeholder="Company Name">
-                        <input type="text" id="c_cAddress" class="w-full bg-[#0f172a] border border-gray-600 rounded-lg px-4 py-2 text-white" placeholder="Company Address">
-                        <div>
-                            <label class="block text-xs text-gray-400 mb-1 ml-1">Date of Issue</label>
-                            <input type="date" id="c_cIssue" class="w-full bg-[#0f172a] border border-gray-600 rounded-lg px-4 py-2 text-white" style="color-scheme: dark;">
-                        </div>
-                    </div>
-                    <div class="space-y-4">
-                        <h3 class="text-lg font-bold text-teal-400 uppercase border-b border-gray-600 pb-2">👤 Employee Info</h3>
-                        <input type="text" id="c_eName" class="w-full bg-[#0f172a] border border-gray-600 rounded-lg px-4 py-2 text-white font-semibold" placeholder="Employee Name">
-                        <input type="text" id="c_eRole" class="w-full bg-[#0f172a] border border-gray-600 rounded-lg px-4 py-2 text-white" placeholder="Designation">
-                    </div>
-                    <div class="space-y-4 md:col-span-2">
-                        <h3 class="text-lg font-bold text-emerald-400 uppercase border-b border-gray-600 pb-2">📅 Tenure</h3>
-                        <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
-                            <div>
-                                <label class="block text-xs text-gray-400 mb-1 ml-1">Date of Joining</label>
-                                <input type="date" id="c_dJoin" class="w-full bg-[#0f172a] border border-gray-600 rounded-lg px-4 py-2 text-white" style="color-scheme: dark;">
-                            </div>
-                            <div>
-                                <label class="block text-xs text-gray-400 mb-1 ml-1">Date of Relieving</label>
-                                <input type="date" id="c_dLeave" class="w-full bg-[#0f172a] border border-gray-600 rounded-lg px-4 py-2 text-white" style="color-scheme: dark;">
-                            </div>
-                        </div>
-                    </div>
-                </div>
-                <div class="mt-10 text-center">
-                    <button onclick="previewCert()" class="bg-teal-600 hover:bg-teal-700 text-white font-bold py-4 px-12 rounded-full uppercase tracking-wider shadow-lg transform transition hover:scale-105">
-                        👁️ View Preview
-                    </button>
-                </div>
-            </div>
-        </div>
-
-        <div id="cert-preview" class="w-full max-w-5xl hidden flex-col items-center">
-            <div class="flex gap-4 mb-6">
-                <button onclick="editCert()" class="bg-gray-600 hover:bg-gray-700 text-white font-bold py-3 px-8 rounded-lg uppercase text-sm">✏️ Edit Details</button>
-                <button onclick="downloadCert()" class="bg-green-600 hover:bg-green-700 text-white font-bold py-3 px-8 rounded-lg uppercase text-sm">📥 Download PDF</button>
-            </div>
-            <div class="preview-wrapper">
-                <div id="cert-paper">
-                    <div style="text-align: center; border-bottom: 2px solid #000; padding-bottom: 15px; margin-bottom: 30px;">
-                        <h1 id="out_c_cName" style="color: #16a34a; font-size: 34px; font-weight: 800; text-transform: uppercase; margin: 0; font-family: 'Poppins', sans-serif;">COMPANY NAME</h1>
-                        <p id="out_c_cAddress" style="color: #000; font-weight: 700; font-size: 15px; margin: 5px 0 0 0; font-family: 'Poppins', sans-serif;">Company Address</p>
-                    </div>
-                    <div style="display: flex; justify-content: space-between; font-weight: 700; font-size: 14px; margin-bottom: 40px; color: #000;">
-                        <span>Ref: HR/EXP/2026/01</span>
-                        <span>Date: <span id="out_c_issue" style="font-weight: 400;">DD-MMM-YYYY</span></span>
-                    </div>
-                    <h2 style="text-align: center; font-size: 18px; font-weight: 800; text-decoration: underline; margin-bottom: 40px; color: #000; font-family: 'Times New Roman', serif;">
-                        TO WHOMSOEVER IT MAY CONCERN
-                    </h2>
-                    <div class="formal-text">
-                        <p style="margin-bottom: 20px;">
-                            This is to certify that <strong>Mr./Ms. <span id="out_c_eName">Employee Name</span></strong> was employed with our organization, <strong><span id="out_c_cNameBody">Company Name</span></strong>, in the capacity of <strong><span id="out_c_role">Designation</span></strong>.
-                        </p>
-                        <p style="margin-bottom: 20px;">
-                            Their tenure with us was from <strong><span id="out_c_join">Start Date</span></strong> to <strong><span id="out_c_leave">End Date</span></strong>. During this period, their roles and responsibilities were handled with utmost dedication and professionalism. 
-                        </p>
-                        <p style="margin-bottom: 40px;">
-                            We found them to be a hardworking, sincere, and valuable team member. Their character and conduct during their association with us were found to be excellent. We wish them success and the very best in all their future endeavors.
-                        </p>
-                    </div>
-                    <div style="margin-top: 80px; color: #000; font-family: 'Times New Roman', serif;">
-                        <p style="font-weight: 700; margin-bottom: 60px;">For <span id="out_c_cNameSign">Company Name</span></p>
-                        <p style="border-top: 1px solid #000; display: inline-block; padding-top: 5px; font-weight: 700; width: 200px;">Authorized Signatory</p>
-                        <p style="margin: 0;">Human Resources Department</p>
-                    </div>
-                </div>
-            </div>
-        </div>
+    <!-- AMOUNT -->
+    <div class="f-group">
+      <label class="f-label">Amount</label>
+      <div class="amt-wrap">
+        <span class="amt-prefix">₹</span>
+        <input type="number" id="amtInput" class="amt-field" placeholder="0" min="0" step="0.01" inputmode="decimal">
+      </div>
+      <div class="quick-pills">
+        <button class="q-pill" data-q="100">₹100</button>
+        <button class="q-pill" data-q="500">₹500</button>
+        <button class="q-pill" data-q="1000">₹1K</button>
+        <button class="q-pill" data-q="5000">₹5K</button>
+        <button class="q-pill" data-q="10000">₹10K</button>
+        <button class="q-pill" data-q="50000">₹50K</button>
+      </div>
     </div>
 
-    <script>
-        // --- SPA TAB SWITCHER LOGIC ---
-        function switchTab(tab) {
-            const btnPayslip = document.getElementById('tab-payslip');
-            const btnCert = document.getElementById('tab-cert');
-            const appPayslip = document.getElementById('app-payslip');
-            const appCert = document.getElementById('app-cert');
+    <!-- CATEGORY -->
+    <div class="f-group">
+      <label class="f-label">Category</label>
+      <div class="cat-grid" id="catGrid"></div>
+    </div>
 
-            if(tab === 'payslip') {
-                // UI Toggle
-                appCert.classList.add('hidden');
-                appPayslip.classList.remove('hidden');
-                
-                // Button Styling
-                btnPayslip.className = "px-8 py-3 rounded-full font-bold text-sm uppercase tracking-wide transition-all bg-blue-600 text-white shadow-lg border-2 border-blue-400";
-                btnCert.className = "px-8 py-3 rounded-full font-bold text-sm uppercase tracking-wide transition-all bg-transparent text-gray-400 hover:text-white border-2 border-transparent hover:border-gray-600";
-            } else {
-                appPayslip.classList.add('hidden');
-                appCert.classList.remove('hidden');
-                
-                btnCert.className = "px-8 py-3 rounded-full font-bold text-sm uppercase tracking-wide transition-all bg-teal-600 text-white shadow-lg border-2 border-teal-400";
-                btnPayslip.className = "px-8 py-3 rounded-full font-bold text-sm uppercase tracking-wide transition-all bg-transparent text-gray-400 hover:text-white border-2 border-transparent hover:border-gray-600";
-            }
-        }
+    <!-- SOURCE -->
+    <div class="f-group">
+      <label class="f-label" id="srcLabel">From (Source)</label>
+      <input type="text" id="srcInput" class="txt-field" placeholder="e.g. Salary, UPI, Cash…" autocomplete="off">
+    </div>
 
-        // --- COMMON HELPERS ---
-        const fmt = (id) => parseFloat(document.getElementById(id).value || 0).toFixed(2);
-        
-        function formatMonthYear(val) {
-            if(!val) return "SELECTED MONTH";
-            return new Date(val).toLocaleString('default', { month: 'long', year: 'numeric' }).toUpperCase();
-        }
-        
-        function formatDate(dateString) {
-            if (!dateString) return "____________";
-            return new Date(dateString).toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' }); 
-        }
+    <!-- NOTE -->
+    <div class="f-group">
+      <label class="f-label">Note (Optional)</label>
+      <input type="text" id="noteInput" class="txt-field" placeholder="Add a short note…" autocomplete="off">
+    </div>
 
-        // --- PAYSLIP LOGIC ---
-        function previewPayslip() {
-            const basic = fmt('p_sBasic'), hra = fmt('p_sHra'), sOther = fmt('p_sOther');
-            const pf = fmt('p_dPf'), esi = fmt('p_dEsi'), dOther = fmt('p_dOther');
-            
-            const gross = (parseFloat(basic) + parseFloat(hra) + parseFloat(sOther)).toFixed(2);
-            const totDed = (parseFloat(pf) + parseFloat(esi) + parseFloat(dOther)).toFixed(2);
-            const netPay = (parseFloat(gross) - parseFloat(totDed)).toFixed(2);
+    <!-- DATE -->
+    <div class="f-group">
+      <label class="f-label">Date</label>
+      <input type="date" id="dateInput" class="txt-field">
+    </div>
 
-            document.getElementById('out_p_cName').innerText = document.getElementById('p_cName').value || "COMPANY NAME";
-            document.getElementById('out_p_cAddress').innerText = document.getElementById('p_cAddress').value || "Company Address";
-            document.getElementById('out_p_Month').innerText = formatMonthYear(document.getElementById('p_cMonth').value);
-            document.getElementById('out_p_eName').innerText = document.getElementById('p_eName').value || "Employee Name";
-            document.getElementById('out_p_eCode').innerText = document.getElementById('p_eCode').value || "EMP-000";
+    <!-- SUBMIT -->
+    <button class="submit-btn cr" id="submitBtn">
+      <span class="spin-mini"></span>
+      <i class="ti ti-check submit-icon"></i>
+      <span class="submit-label">Add Transaction</span>
+    </button>
+  </div>
+</div>
 
-            document.getElementById('out_p_basic').innerText = basic;
-            document.getElementById('out_p_hra').innerText = hra;
-            document.getElementById('out_p_sOther').innerText = sOther;
-            document.getElementById('out_p_pf').innerText = pf;
-            document.getElementById('out_p_esi').innerText = esi;
-            document.getElementById('out_p_dOther').innerText = dOther;
-            
-            document.getElementById('out_p_gross').innerText = gross;
-            document.getElementById('out_p_totDed').innerText = totDed;
-            document.getElementById('out_p_net').innerText = parseFloat(netPay).toLocaleString('en-IN');
+<!-- TOAST -->
+<div class="toast" id="toast"><i class="ti ti-check-circle"></i><span id="toastTxt">Done!</span></div>
 
-            document.getElementById('payslip-form').classList.add('hidden');
-            document.getElementById('payslip-preview').classList.remove('hidden');
-            document.getElementById('payslip-preview').classList.add('flex');
-        }
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.js"></script>
+<script>
+// ─── DATA ───────────────────────────────────────
+let txns = JSON.parse(localStorage.getItem('df_txns') || '[]');
+let filter = 'all', chartMode = 'donut', mode = 'credit', selCat = null;
+let donutInst = null, barInst = null;
 
-        function editPayslip() {
-            document.getElementById('payslip-preview').classList.add('hidden');
-            document.getElementById('payslip-preview').classList.remove('flex');
-            document.getElementById('payslip-form').classList.remove('hidden');
-        }
+const CR_CATS = [
+  {id:'salary',    ico:'ti-briefcase',          name:'Salary'},
+  {id:'freelance', ico:'ti-laptop',              name:'Freelance'},
+  {id:'business',  ico:'ti-building-store',      name:'Business'},
+  {id:'gift',      ico:'ti-gift',                name:'Gift'},
+  {id:'invest',    ico:'ti-trending-up',         name:'Invest'},
+  {id:'refund',    ico:'ti-receipt-refund',      name:'Refund'},
+  {id:'rent_in',   ico:'ti-home-dollar',         name:'Rent'},
+  {id:'other_in',  ico:'ti-circle-plus',         name:'Other'},
+];
+const DR_CATS = [
+  {id:'food',      ico:'ti-bowl',                name:'Food'},
+  {id:'transport', ico:'ti-car',                 name:'Transport'},
+  {id:'shopping',  ico:'ti-shopping-cart',       name:'Shopping'},
+  {id:'fun',       ico:'ti-device-gamepad-2',    name:'Fun'},
+  {id:'health',    ico:'ti-heart-rate-monitor',  name:'Health'},
+  {id:'bills',     ico:'ti-file-invoice',        name:'Bills'},
+  {id:'edu',       ico:'ti-school',              name:'Edu'},
+  {id:'other_out', ico:'ti-dots-circle-horizontal',name:'Other'},
+];
+const ALL_CATS = [...CR_CATS, ...DR_CATS];
+const catMap   = Object.fromEntries(ALL_CATS.map(c => [c.id, c]));
+const COLORS   = ['#00CFA8','#5C78FF','#FF4B6E','#FFB347','#A78BFA','#34D399','#F59E0B','#FB923C'];
 
-        function downloadPayslip() {
-            const opt = {
-                margin: 0, filename: `Payslip_${document.getElementById('p_eName').value || 'Emp'}.pdf`,
-                image: { type: 'jpeg', quality: 1 }, html2canvas: { scale: 2, useCORS: true }, 
-                jsPDF: { unit: 'mm', format: 'a4', orientation: 'portrait' }
-            };
-            html2pdf().set(opt).from(document.getElementById('payslip-paper')).save();
-        }
+// ─── UTILS ──────────────────────────────────────
+const fmt  = v => '₹' + Math.abs(v).toLocaleString('en-IN', {maximumFractionDigits:2});
+const save = ()  => localStorage.setItem('df_txns', JSON.stringify(txns));
+const todayStr   = () => new Date().toISOString().split('T')[0];
 
-        // --- CERTIFICATE LOGIC ---
-        function previewCert() {
-            const cName = document.getElementById('c_cName').value || "COMPANY NAME";
-            
-            document.getElementById('out_c_cName').innerText = cName;
-            document.getElementById('out_c_cNameBody').innerText = cName;
-            document.getElementById('out_c_cNameSign').innerText = cName;
-            document.getElementById('out_c_cAddress').innerText = document.getElementById('c_cAddress').value || "Company Address";
-            
-            document.getElementById('out_c_issue').innerText = formatDate(document.getElementById('c_cIssue').value);
-            document.getElementById('out_c_join').innerText = formatDate(document.getElementById('c_dJoin').value);
-            document.getElementById('out_c_leave').innerText = formatDate(document.getElementById('c_dLeave').value);
-            
-            document.getElementById('out_c_eName').innerText = document.getElementById('c_eName').value || "Employee Name";
-            document.getElementById('out_c_role').innerText = document.getElementById('c_eRole').value || "Designation";
+function fmtDate(ds) {
+  const d   = new Date(ds + 'T00:00:00');
+  const tod = new Date(); tod.setHours(0,0,0,0);
+  const yes = new Date(tod); yes.setDate(yes.getDate()-1);
+  if (d.toDateString()===tod.toDateString()) return 'Today';
+  if (d.toDateString()===yes.toDateString()) return 'Yesterday';
+  return d.toLocaleDateString('en-IN',{day:'numeric',month:'short',year:'numeric'});
+}
 
-            document.getElementById('cert-form').classList.add('hidden');
-            document.getElementById('cert-preview').classList.remove('hidden');
-            document.getElementById('cert-preview').classList.add('flex');
-        }
+function counter(el, to, prefix='₹') {
+  const dur = 550, start = performance.now(), from = 0;
+  const step = ts => {
+    const p   = Math.min((ts-start)/dur, 1);
+    const ease = 1 - Math.pow(1-p, 3);
+    el.textContent = prefix + Math.abs(from+(to-from)*ease).toLocaleString('en-IN',{maximumFractionDigits:0});
+    if (p<1) requestAnimationFrame(step);
+  };
+  requestAnimationFrame(step);
+}
 
-        function editCert() {
-            document.getElementById('cert-preview').classList.add('hidden');
-            document.getElementById('cert-preview').classList.remove('flex');
-            document.getElementById('cert-form').classList.remove('hidden');
-        }
+function toast(msg, ok=true) {
+  const el = document.getElementById('toast');
+  el.className = 'toast show ' + (ok?'ok':'err');
+  el.querySelector('i').className = ok ? 'ti ti-check-circle' : 'ti ti-alert-circle';
+  document.getElementById('toastTxt').textContent = msg;
+  clearTimeout(el._t);
+  el._t = setTimeout(()=>el.classList.remove('show'), 2600);
+}
 
-        function downloadCert() {
-            const opt = {
-                margin: 0, filename: `Experience_${document.getElementById('c_eName').value || 'Emp'}.pdf`,
-                image: { type: 'jpeg', quality: 1 }, html2canvas: { scale: 2, useCORS: true }, 
-                jsPDF: { unit: 'mm', format: 'a4', orientation: 'portrait' }
-            };
-            html2pdf().set(opt).from(document.getElementById('cert-paper')).save();
-        }
-    </script>
+// ─── STATS ──────────────────────────────────────
+function updateStats() {
+  const crT = txns.filter(t=>t.type==='credit').reduce((s,t)=>s+t.amount,0);
+  const drT = txns.filter(t=>t.type==='debit').reduce((s,t)=>s+t.amount,0);
+  const bal = crT - drT;
+  const sav = crT>0 ? Math.round(((crT-drT)/crT)*100) : 0;
+
+  const balEl = document.getElementById('balAmt');
+  balEl.className = 'bal-amount ' + (bal>0?'pos':bal<0?'neg':'zero');
+  counter(balEl, bal);
+  document.getElementById('balMeta').textContent = `${txns.length} transaction${txns.length!==1?'s':''} recorded`;
+  document.getElementById('hdrCr').textContent = fmt(crT);
+  document.getElementById('hdrDr').textContent = fmt(drT);
+  document.getElementById('hdrSaved').textContent = (sav>=0?'+':'')+sav+'%';
+  counter(document.getElementById('statCr'), crT);
+  counter(document.getElementById('statDr'), drT);
+}
+
+// ─── TRANSACTIONS ────────────────────────────────
+function renderTxns() {
+  const q = document.getElementById('searchInput').value.toLowerCase();
+  const list = txns.filter(t => {
+    if (filter!=='all' && t.type!==filter) return false;
+    if (q) {
+      const cat = catMap[t.category]?.name.toLowerCase()||'';
+      if (!cat.includes(q)&&!t.src.toLowerCase().includes(q)&&!(t.note||'').toLowerCase().includes(q)) return false;
+    }
+    return true;
+  });
+
+  const el = document.getElementById('txList');
+  if (!list.length) {
+    el.innerHTML = `<div class="empty-state"><div class="empty-emoji">💸</div><div class="empty-title">Nothing here</div><div class="empty-sub">Tap <b>+</b> to add your first transaction</div></div>`;
+    return;
+  }
+
+  const groups = {};
+  list.forEach(t => { if(!groups[t.date]) groups[t.date]=[]; groups[t.date].push(t); });
+  const dates  = Object.keys(groups).sort((a,b)=>new Date(b)-new Date(a));
+
+  el.innerHTML = dates.map(d => `
+    <div class="tx-group-date">${fmtDate(d)}</div>
+    ${groups[d].map(txItem).join('')}
+  `).join('');
+}
+
+function txItem(t) {
+  const c    = catMap[t.category];
+  const sign = t.type==='credit' ? '+' : '-';
+  const time = new Date(t.ts).toLocaleTimeString('en-IN',{hour:'2-digit',minute:'2-digit'});
+  const cls  = t.type==='credit'?'cr':'dr';
+  return `<div class="tx-item" data-id="${t.id}">
+    <div class="tx-ico ${cls}"><i class="ti ${c?.ico||'ti-circle-dot'}"></i></div>
+    <div class="tx-info">
+      <div class="tx-cat">${c?.name||t.category}</div>
+      <div class="tx-src">${t.src||t.note||'No description'}</div>
+    </div>
+    <div class="tx-right">
+      <div class="tx-amt ${cls}">${sign}${fmt(t.amount)}</div>
+      <div class="tx-time">${time}</div>
+    </div>
+    <button class="tx-del" onclick="deleteTx('${t.id}',event)" title="Delete"><i class="ti ti-x"></i></button>
+  </div>`;
+}
+
+window.deleteTx = (id, e) => {
+  e.stopPropagation();
+  const el = document.querySelector(`[data-id="${id}"]`);
+  if (el) {
+    el.classList.add('removing');
+    setTimeout(()=>{ txns=txns.filter(t=>t.id!==id); save(); updateStats(); renderTxns(); renderCharts(); }, 280);
+  }
+};
+
+// ─── CHARTS ─────────────────────────────────────
+function renderCharts() {
+  const has = txns.length>0;
+  document.getElementById('noChart').style.display = has?'none':'block';
+  document.getElementById('donutWrap').style.display = (has&&chartMode==='donut')?'block':'none';
+  document.getElementById('barWrap').style.display   = (has&&chartMode==='bar')?'block':'none';
+  if (!has) { document.getElementById('legend').innerHTML=''; return; }
+  chartMode==='donut' ? renderDonut() : renderBar();
+}
+
+function renderDonut() {
+  const totals={};
+  txns.filter(t=>t.type==='debit').forEach(t=>{
+    const n=catMap[t.category]?.name||t.category;
+    totals[n]=(totals[n]||0)+t.amount;
+  });
+  const labels=Object.keys(totals), data=Object.values(totals);
+  if (!labels.length) {
+    document.getElementById('donutWrap').style.display='none';
+    document.getElementById('noChart').style.display='block';
+    document.getElementById('legend').innerHTML='';
+    return;
+  }
+  if (donutInst) donutInst.destroy();
+  donutInst = new Chart(document.getElementById('donutC'),{
+    type:'doughnut',
+    data:{labels,datasets:[{data,backgroundColor:COLORS.slice(0,data.length),borderWidth:0,hoverOffset:10}]},
+    options:{responsive:true,maintainAspectRatio:false,cutout:'67%',
+      plugins:{legend:{display:false},tooltip:{callbacks:{label:c=>` ${fmt(c.raw)}`}}},
+      animation:{animateRotate:true,duration:800}}
+  });
+  document.getElementById('legend').innerHTML=labels.map((l,i)=>
+    `<div class="leg-item"><div class="leg-dot" style="background:${COLORS[i]}"></div>${l}</div>`).join('');
+}
+
+function renderBar() {
+  const days=[],crs=[],drs=[];
+  for (let i=6;i>=0;i--) {
+    const d=new Date(); d.setDate(d.getDate()-i);
+    const ds=d.toISOString().split('T')[0];
+    days.push(d.toLocaleDateString('en-IN',{weekday:'short'}));
+    crs.push(txns.filter(t=>t.type==='credit'&&t.date===ds).reduce((s,t)=>s+t.amount,0));
+    drs.push(txns.filter(t=>t.type==='debit'&&t.date===ds).reduce((s,t)=>s+t.amount,0));
+  }
+  if (barInst) barInst.destroy();
+  barInst = new Chart(document.getElementById('barC'),{
+    type:'bar',
+    data:{labels:days,datasets:[
+      {label:'Income',data:crs,backgroundColor:'rgba(0,207,168,0.75)',borderRadius:6,borderSkipped:false},
+      {label:'Expense',data:drs,backgroundColor:'rgba(255,75,110,0.75)',borderRadius:6,borderSkipped:false},
+    ]},
+    options:{responsive:true,maintainAspectRatio:false,
+      plugins:{legend:{display:false},tooltip:{callbacks:{label:c=>` ${c.dataset.label}: ${fmt(c.raw)}`}}},
+      scales:{
+        x:{grid:{display:false},ticks:{color:'#5A6A8A',font:{family:'Jost',weight:'600',size:11}}},
+        y:{grid:{color:'rgba(255,255,255,0.04)'},ticks:{color:'#5A6A8A',font:{family:'Jost',size:10},callback:v=>'₹'+v.toLocaleString('en-IN')}}
+      },animation:{duration:700}}
+  });
+  document.getElementById('legend').innerHTML=`
+    <div class="leg-item"><div class="leg-dot" style="background:#00CFA8"></div>Income</div>
+    <div class="leg-item"><div class="leg-dot" style="background:#FF4B6E"></div>Expense</div>`;
+}
+
+// ─── CATEGORY GRID ───────────────────────────────
+function buildCatGrid() {
+  selCat=null;
+  const cats=mode==='credit'?CR_CATS:DR_CATS;
+  document.getElementById('catGrid').innerHTML=cats.map(c=>`
+    <button class="cat-btn" data-cat="${c.id}" onclick="pickCat('${c.id}')">
+      <i class="ti ${c.ico} cat-ico"></i>
+      <div class="cat-name">${c.name}</div>
+    </button>`).join('');
+}
+
+window.pickCat = id => {
+  selCat=id;
+  const sel = mode==='credit'?'sel-cr':'sel-dr';
+  document.querySelectorAll('.cat-btn').forEach(b=>{
+    b.classList.remove('sel-cr','sel-dr');
+    if(b.dataset.cat===id) b.classList.add(sel);
+  });
+};
+
+// ─── TYPE TOGGLE ─────────────────────────────────
+document.querySelectorAll('.type-btn').forEach(btn=>{
+  btn.addEventListener('click',()=>{
+    mode=btn.dataset.type;
+    document.querySelectorAll('.type-btn').forEach(b=>b.classList.remove('active'));
+    btn.classList.add('active');
+    const isCr=mode==='credit';
+    document.getElementById('srcLabel').textContent = isCr ? 'From (Source)' : 'To (Destination)';
+    document.getElementById('srcInput').placeholder = isCr ? 'e.g. Salary, Bank, UPI…' : 'e.g. Swiggy, Petrol, Amazon…';
+    document.getElementById('submitBtn').className = 'submit-btn ' + (isCr?'cr':'dr');
+    buildCatGrid();
+  });
+});
+
+// ─── CHART TABS ──────────────────────────────────
+document.querySelectorAll('.chart-tab').forEach(t=>{
+  t.addEventListener('click',()=>{
+    document.querySelectorAll('.chart-tab').forEach(x=>x.classList.remove('active'));
+    t.classList.add('active'); chartMode=t.dataset.chart; renderCharts();
+  });
+});
+
+// ─── FILTER TABS ─────────────────────────────────
+document.querySelectorAll('.filter-tab').forEach(t=>{
+  t.addEventListener('click',()=>{
+    document.querySelectorAll('.filter-tab').forEach(x=>x.classList.remove('active'));
+    t.classList.add('active'); filter=t.dataset.f; renderTxns();
+  });
+});
+
+// ─── SEARCH ──────────────────────────────────────
+document.getElementById('searchInput').addEventListener('input', renderTxns);
+
+// ─── QUICK PILLS ─────────────────────────────────
+document.querySelectorAll('.q-pill').forEach(p=>{
+  p.addEventListener('click',()=>{ document.getElementById('amtInput').value=p.dataset.q; });
+});
+
+// ─── FAB / MODAL ─────────────────────────────────
+const fab   = document.getElementById('fab');
+const modal = document.getElementById('modal');
+
+fab.addEventListener('click', ()=>{
+  const open=modal.classList.toggle('is-open');
+  fab.classList.toggle('is-open', open);
+  if(open) setTimeout(()=>document.getElementById('amtInput').focus(), 420);
+});
+
+function closeModal() {
+  modal.classList.remove('is-open');
+  fab.classList.remove('is-open');
+  document.getElementById('amtInput').value='';
+  document.getElementById('srcInput').value='';
+  document.getElementById('noteInput').value='';
+  selCat=null;
+  document.querySelectorAll('.cat-btn').forEach(b=>b.classList.remove('sel-cr','sel-dr'));
+}
+document.getElementById('closeModal').addEventListener('click', closeModal);
+modal.addEventListener('click', e=>{ if(e.target===modal) closeModal(); });
+
+// ─── SUBMIT ──────────────────────────────────────
+document.getElementById('submitBtn').addEventListener('click', ()=>{
+  const amt  = parseFloat(document.getElementById('amtInput').value);
+  const src  = document.getElementById('srcInput').value.trim();
+  const note = document.getElementById('noteInput').value.trim();
+  const date = document.getElementById('dateInput').value || todayStr();
+
+  if (!amt || amt<=0)  { toast('Enter a valid amount!', false); document.getElementById('amtInput').focus(); return; }
+  if (!selCat)         { toast('Please select a category!', false); return; }
+
+  const btn=document.getElementById('submitBtn');
+  btn.classList.add('loading');
+
+  setTimeout(()=>{
+    btn.classList.remove('loading');
+    const t = {
+      id: Date.now().toString(36)+Math.random().toString(36).slice(2,5),
+      type: mode, amount: amt, category: selCat,
+      src: src || (mode==='credit'?'Income':'Expense'), note, date,
+      ts: new Date().toISOString()
+    };
+    txns.unshift(t); save();
+    updateStats(); renderTxns(); renderCharts();
+    closeModal();
+    toast(mode==='credit' ? '✓ Income added!' : '✓ Expense logged!');
+  }, 650);
+});
+
+// ─── EXPORT ──────────────────────────────────────
+document.getElementById('exportBtn').addEventListener('click', ()=>{
+  if (!txns.length) { toast('No transactions to export!', false); return; }
+  const rows = ['Date,Type,Category,Source/Destination,Amount,Note'];
+  txns.forEach(t => rows.push([t.date,t.type,catMap[t.category]?.name||t.category,t.src,t.amount,t.note||''].join(',')));
+  const a=document.createElement('a');
+  a.href=URL.createObjectURL(new Blob([rows.join('\n')],{type:'text/csv'}));
+  a.download='dailyflow_export.csv'; a.click();
+  toast('Exported to CSV!');
+});
+
+// ─── CLEAR ───────────────────────────────────────
+document.getElementById('clearBtn').addEventListener('click', ()=>{
+  if (!txns.length) return;
+  if (confirm('Clear ALL transactions? This cannot be undone.')) {
+    txns=[]; save();
+    if(donutInst){donutInst.destroy();donutInst=null;}
+    if(barInst){barInst.destroy();barInst=null;}
+    updateStats(); renderTxns(); renderCharts();
+    toast('All cleared');
+  }
+});
+
+// ─── INIT ────────────────────────────────────────
+function init() {
+  // Date display
+  document.getElementById('currentDate').textContent=new Date().toLocaleDateString('en-IN',{weekday:'long',day:'numeric',month:'long'});
+  document.getElementById('dateInput').value=todayStr();
+  buildCatGrid(); updateStats(); renderTxns(); renderCharts();
+
+  // Reveal app after loader
+  setTimeout(()=>{
+    document.getElementById('loader').classList.add('fade-out');
+    setTimeout(()=>{
+      document.getElementById('loader').style.display='none';
+      document.getElementById('app').style.display='block';
+    }, 600);
+  }, 2100);
+}
+
+init();
+</script>
 </body>
 </html>
